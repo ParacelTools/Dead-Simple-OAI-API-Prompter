@@ -102,6 +102,17 @@ def clear_history():
         conn.commit()
     return jsonify({"status": "cleared"})
 
+@app.route("/history")
+def full_history():
+    with sqlite3.connect(DB_PATH) as conn:
+        c = conn.cursor()
+        c.execute("SELECT timestamp, role, content FROM chat ORDER BY id ASC")
+        rows = c.fetchall()
+    return jsonify([
+        {"timestamp": ts, "role": role, "content": content}
+        for ts, role, content in rows
+    ])
+
 if __name__ == "__main__":
     init_db()
     app.run(host="0.0.0.0", port=5005, debug=True)

@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Llama Prompt GUI</title>
+    <title>Dead Simple OAI API Prompter</title>
 </head>
 <body>
-    <h1>Llama Prompt Interface</h1>
+    <h1>Prompt Interface</h1>
     <form id="prompt-form">
-    <label for="llama_url">LLaMA Server URL:</label><br>
+    <label for="llama_url">OAI API Server URL:</label><br>
     <input type="text" id="llama_url" name="llama_url" placeholder="http://localhost:8080/v1/chat/completions" size="100" value="{{ llama_url }}"><br><br>
 
     <label for="system">System Prompt:</label><br>
@@ -50,6 +50,7 @@
         responseDiv.innerText = result.response;
         if (result.payload) {
         document.getElementById("api-payload").value = JSON.stringify(result.payload, null, 2);
+        loadChatHistory();
         }
     });
 
@@ -62,7 +63,8 @@
 
     const result = await response.json();
     if (result.status === "cleared") {
-        alert("Chat history cleared. You will need to refresh to see it reflected.");
+        alert("Chat history cleared.");
+        loadChatHistory();
         document.getElementById("api-payload").value = "";
         document.getElementById("response").innerText = "";
     }
