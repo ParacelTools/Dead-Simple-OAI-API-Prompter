@@ -23,6 +23,9 @@
     <h3>Payload Sent to API</h3>
 <textarea id="api-payload" rows="20" cols="100" readonly></textarea>
 
+<h3>SQL Rows</h3>
+<textarea id="chat-history" rows="20" cols="100" readonly></textarea>
+
     <script>
     document.getElementById("prompt-form").addEventListener("submit", async function(e) {
         e.preventDefault();
@@ -59,12 +62,21 @@
 
     const result = await response.json();
     if (result.status === "cleared") {
-        alert("Chat history cleared.");
+        alert("Chat history cleared. You will need to refresh to see it reflected.");
         document.getElementById("api-payload").value = "";
         document.getElementById("response").innerText = "";
     }
     });
+// Fetch and display all chat history
+async function loadChatHistory() {
+    const res = await fetch("/history");
+    const data = await res.json();
+    const textarea = document.getElementById("chat-history");
+    textarea.value = data.map(row => `[${row.timestamp}] ${row.role}: ${row.content}`).join("\n");
+    }
 
+loadChatHistory();
+</script>
     </script>
 </body>
 </html>
