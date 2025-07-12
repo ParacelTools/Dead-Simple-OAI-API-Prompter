@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Llama Prompt GUI</title>
+</head>
+<body>
+    <h1>Llama Prompt Interface</h1>
+    <form id="prompt-form">
+    <label for="llama_url">LLaMA Server URL:</label><br>
+    <input type="text" id="llama_url" name="llama_url" placeholder="http://localhost:8080/v1/chat/completions" size="100" value="{{ llama_url }}"><br><br>
+
+    <label for="system">System Prompt:</label><br>
+    <textarea id="system" name="system" rows="10" cols="100" placeholder="e.g. You are a helpful assistant."></textarea><br><br>
+
+    <label for="user">User Prompt:</label><br>
+    <textarea id="user" name="user" rows="10" cols="100" placeholder="Ask me anything..."></textarea><br><br>
+
+    <button type="submit">Send</button> <button type="button" id="clear-history">Clear History</button>
+    </form>
+    <hr>
+    <div id="response"><strong>Response will appear here.</strong></div>
+
+    <h3>Payload Sent to API</h3>
+<textarea id="api-payload" rows="20" cols="100" readonly></textarea>
+
+    <script>
+    document.getElementById("prompt-form").addEventListener("submit", async function(e) {
+        e.preventDefault();
+
+        const llama_url = document.getElementById("llama_url").value;
+        const system = document.getElementById("system").value;
+        const user = document.getElementById("user").value;
+        const responseDiv = document.getElementById("response");
+        responseDiv.innerText = "Thinking...";
+
+        const formData = new FormData();
+        formData.append("llama_url", llama_url);
+        formData.append("system", system);
+        formData.append("user", user);
+
+        const response = await fetch("/prompt", {
+            method: "POST",
+            body: formData
+        });
+
+        const result = await response.json();
+        responseDiv.innerText = result.response;
+        if (result.payload) {
+        document.getElementById("api-payload").value = JSON.stringify(result.payload, null, 2);
+        }
+    });
+
+    document.getElementById("clear-history").addEventListener("click", async function() {
+    if (!confirm("Are you sure you want to delete all chat history?")) return;
+
+    const response = await fetch("/clear", {
+        method: "POST"
+    });
+
+    const result = await response.json();
+    if (result.status === "cleared") {
+        alert("Chat history cleared.");
+        document.getElementById("api-payload").value = "";
+        document.getElementById("response").innerText = "";
+    }
+    });
+
+    </script>
+</body>
+</html>
