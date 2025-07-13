@@ -66,7 +66,7 @@ def send_to_llama(messages, url, model="llama-chat", temperature=0.7, top_p=0.9,
         data = response.json()
         return data["choices"][0]["message"]["content"], payload
     except Exception as e:
-        return f"Error: {e}"
+        return f"Error: {e}", payload
 
 # --- Routes ---
 @app.route("/")
@@ -80,18 +80,33 @@ def prompt():
     user_input = request.form["user"]
     llama_url = request.form.get("llama_url", load_llama_url())
 
+    # New parameters
+    try:
+        recent_limit = int(request.form.get("recent_limit"))
+        temperature = float(request.form.get("temperature"))
+        top_p = float(request.form.get("top_p"))
+        max_tokens = int(request.form.get("max_tokens"))
+    except ValueError:
+        return jsonify({"response": "Invalid numeric input"}), 400
+
     save_llama_url(llama_url)
 
     log_message("user", user_input)
-    recent_messages = get_recent_messages()
+    recent_messages = get_recent_messages(limit=recent_limit)
     messages = [{"role": "system", "content": system_prompt}] + recent_messages
 
-    reply, payload = send_to_llama(messages, url=llama_url)
+    reply, payload = send_to_llama(
+        messages,
+        url=llama_url,
+        temperature=temperature,
+        top_p=top_p,
+        max_tokens=max_tokens
+    )
     log_message("assistant", reply)
 
     return jsonify({
         "response": reply,
-        "payload": payload  # ← include actual API request
+        "payload": payload
     })
 
 @app.route("/clear", methods=["POST"])
