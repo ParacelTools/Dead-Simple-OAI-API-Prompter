@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dead Simple OAI API Prompter</title>
+</head>
+<body>
+    <h1>Prompt Interface</h1>
+    <form id="prompt-form">
+    <label for="llama_url">OAI API Server URL:</label><br>
+    <input type="text" id="llama_url" name="llama_url" placeholder="http://localhost:8080/v1/chat/completions" size="100" value="{{ llama_url }}"><br><br>
+
+    <label for="system">System Prompt:</label><br>
+    <textarea id="system" name="system" rows="10" cols="100" placeholder="e.g. You are a helpful assistant."></textarea><br><br>
+
+    <label for="user">User Prompt:</label><br>
+    <textarea id="user" name="user" rows="10" cols="100" placeholder="Ask me anything..."></textarea><br><br>
+
+    <label><input type="checkbox" id="use_grammar" name="use_grammar"> Use Grammar Constraint</label><br><br>
+    <label for="grammar">Grammar (optional):</label><br>
+    <textarea id="grammar" name="grammar" rows="10" cols="100" placeholder="Paste your BNF grammar here..."></textarea><br><br>
+
+    <label for="recent_limit">Message History Limit:</label>
+    <input type="number" id="recent_limit" name="recent_limit" value="10" min="1" max="50"><br><br>
+
+    <label for="temperature">Temperature:</label>
+    <input type="number" id="temperature" name="temperature" step="0.1" value="0.7" min="0" max="2"><br><br>
+
+    <label for="top_p">Top-p:</label>
+    <input type="number" id="top_p" name="top_p" step="0.1" value="0.9" min="0" max="1"><br><br>
+
+    <label for="max_tokens">Max Tokens:</label>
+    <input type="number" id="max_tokens" name="max_tokens" value="1000" min="10" max="10000"><br><br>
+    <button type="submit">Send</button> <button type="button" id="clear-history">Clear History</button>
+    </form>
+    <hr>
+    <div id="response"><strong>Response will appear here.</strong></div>
+
+    <h3>Payload Sent to API</h3>
+<textarea id="api-payload" rows="20" cols="100" readonly></textarea>
+
+<h3>SQL Rows</h3>
+<textarea id="chat-history" rows="20" cols="100" readonly></textarea>
+
+    <script>
+    document.getElementById("prompt-form").addEventListener("submit", async function(e) {
+        e.preventDefault();
+
+        const llama_url = document.getElementById("llama_url").value;
+        const system = document.getElementById("system").value;
+        const user = document.getElementById("user").value;
+        const responseDiv = document.getElementById("response");
+        responseDiv.innerText = "Thinking...";
+
+        const formData = new FormData();
+        formData.append("llama_url", llama_url);
+        formData.append("system", system);
+        formData.append("user", user);
+        formData.append("recent_limit", document.getElementById("recent_limit").value);
+        formData.append("temperature", document.getElementById("temperature").value);
+        formData.append("top_p", document.getElementById("top_p").value);
+        formData.append("max_tokens", document.getElementById("max_tokens").value);
+        formData.append("grammar", document.getElementById("grammar").value);
+
+        const response = await fetch("/prompt", {
+            method: "POST",
+            body: formData
+        });
+
+        const result = await response.json();
+        responseDiv.innerText = result.response;
+        if (result.payload) {
+        document.getElementById("api-payload").value = JSON.stringify(result.payload, null, 2);
+        loadChatHistory();
+        }
+    });
+
+    document.getElementById("clear-history").addEventListener("click", async function() {
+    if (!confirm("Are you sure you want to delete all chat history?")) return;
+
+    const response = await fetch("/clear", {
+        method: "POST"
+    });
+
+    const result = await response.json();
+    if (result.status === "cleared") {
+        alert("Chat history cleared.");
+        loadChatHistory();
+        document.getElementById("api-payload").value = "";
+        document.getElementById("response").innerText = "";
+    }
+    });
+// Fetch and display all chat history
+async function loadChatHistory() {
+    const res = await fetch("/history");
+    const data = await res.json();
+    const textarea = document.getElementById("chat-history");
+    textarea.value = data.map(row => `[${row.timestamp}] ${row.role}: ${row.content}`).join("\n");
+    }
+
+loadChatHistory();
+</script>
+    </script>
+</body>
+</html>

@@ -50,7 +50,7 @@ def get_recent_messages(limit=10):
         return [{"role": role, "content": content} for role, content in reversed(rows)]
 
 # --- LLaMA Interaction ---
-def send_to_llama(messages, url, model="llama-chat", temperature=0.7, top_p=0.9, max_tokens=10000, stream=False):
+def send_to_llama(messages, url, model="llama-chat", temperature=0.7, top_p=0.9, max_tokens=10000, stream=False, grammar=None):
     payload = {
         "model": model,
         "messages": messages,
@@ -59,6 +59,8 @@ def send_to_llama(messages, url, model="llama-chat", temperature=0.7, top_p=0.9,
         "max_tokens": max_tokens,
         "stream": stream
     }
+    if grammar:
+        payload["grammar"] = grammar
 
     try:
         response = requests.post(url, json=payload)
@@ -100,7 +102,8 @@ def prompt():
         url=llama_url,
         temperature=temperature,
         top_p=top_p,
-        max_tokens=max_tokens
+        max_tokens=max_tokens,
+        grammar = request.form.get("grammar") or None
     )
     log_message("assistant", reply)
 
@@ -131,4 +134,5 @@ def full_history():
 if __name__ == "__main__":
     init_db()
     app.run(host="0.0.0.0", port=5005, debug=True)
+
 
